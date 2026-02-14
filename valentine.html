@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Special Valentine for My Love ❤️</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        :root { --pink-main: #ff85a1; --pink-dark: #f43f5e; }
+        body { margin: 0; background: radial-gradient(circle, #fff0f3 0%, #ffc1cc 100%); color: #444; font-family: 'Quicksand', sans-serif; overflow: hidden; height: 100vh; touch-action: manipulation; }
+        #canvas-container { position: fixed; top: 0; left: 0; z-index: -1; }
+        
+        .glass-panel { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(15px); border: 2px solid white; border-radius: 30px; box-shadow: 0 15px 35px rgba(244, 63, 94, 0.2); }
+        
+        .phase { display: none; opacity: 0; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw; padding: 20px; text-align: center; position: absolute; }
+        .active { display: flex; opacity: 1; }
+
+        /* Game Elements */
+        .game-heart { position: absolute; font-size: 2.8rem; cursor: pointer; user-select: none; z-index: 50; filter: drop-shadow(0 5px 10px rgba(244, 63, 94, 0.3)); transition: transform 0.1s; }
+        .game-heart:active { transform: scale(1.5); }
+
+        /* Envelope */
+        .envelope-wrapper { width: 200px; height: 150px; cursor: pointer; perspective: 1000px; }
+        #envelope { width: 100%; height: 100%; background: #fb7185; border-radius: 0 0 10px 10px; position: relative; }
+        .flap { position: absolute; top: 0; width: 0; height: 0; border-left: 100px solid transparent; border-right: 100px solid transparent; border-top: 80px solid #f43f5e; transform-origin: top; transition: 0.6s; }
+        .open .flap { transform: rotateX(180deg); }
+
+        /* Photo Cards */
+        .gallery-container { position: relative; height: 250px; width: 100%; max-width: 350px; display: flex; justify-content: center; }
+        .photo-card { position: absolute; width: 140px; height: 180px; background: white; padding: 6px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border: 3px solid white; cursor: pointer; }
+        .photo-card img { width: 100%; height: 80%; object-fit: cover; border-radius: 4px; }
+        .photo-card span { font-family: 'Dancing Script', cursive; font-size: 0.8rem; display: block; margin-top: 4px; color: #f43f5e; }
+
+        #transition-box { position: fixed; top: 50%; left: 50%; width: 10px; height: 10px; background: #f43f5e; border-radius: 50%; transform: translate(-50%, -50%); z-index: 100; display: none; }
+        
+        .floating-text { font-size: 1.5rem; font-weight: bold; color: #f43f5e; text-shadow: 2px 2px 5px rgba(255,255,255,0.5); }
+    </style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+<div id="transition-box"></div>
+
+<div id="app">
+    <div id="phase1" class="phase active">
+        <div class="envelope-wrapper" id="envelope-trigger">
+            <div id="envelope">
+                <div class="flap"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-4xl">💌</div>
+            </div>
+        </div>
+        <p class="mt-8 text-rose-500 font-bold animate-bounce bg-white/70 px-6 py-2 rounded-full shadow-md">SENTUH SURATNYA ❤️</p>
+    </div>
+
+    <div id="phase2" class="phase">
+        <div class="glass-panel p-8 w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-4 text-rose-600">Mau lanjut sayangg ?</h2>
+            <p class="text-rose-400 italic mb-8">Bilang: <span class="font-bold">"Iya Sayang"</span></p>
+            <div id="mic-btn" class="relative w-20 h-20 mx-auto mb-4 cursor-pointer bg-white rounded-full flex items-center justify-center text-3xl shadow-lg hover:scale-110 transition">🎤</div>
+            <p id="voice-log" class="text-xs font-bold text-rose-400 uppercase">Siap Mendengarkan...</p>
+        </div>
+    </div>
+
+    <div id="phaseIntro" class="phase">
+        <div class="floating-text px-6" id="intro-text"></div>
+    </div>
+
+    <div id="phase3" class="phase">
+        <div class="glass-panel p-6 w-full max-w-md">
+            <div class="mb-4">
+                <div class="flex justify-between text-[10px] font-bold text-rose-500 mb-1 uppercase tracking-tighter">
+                    <span id="progress-text">Progress: 1/5</span>
+                    <span>Unlock Memory ❤️</span>
+                </div>
+                <div class="w-full bg-rose-100 h-2 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="bg-rose-500 h-full transition-all duration-500" style="width: 20%"></div>
+                </div>
+            </div>
+            <h2 id="q-text" class="text-md font-bold mb-6 text-gray-700 h-16 flex items-center justify-center px-2"></h2>
+            <input type="text" id="ans-input" placeholder="Ketik jawabannya..." class="w-full text-center border-b-2 border-rose-400 bg-transparent outline-none pb-2 text-rose-600 font-bold text-lg">
+            <p class="mt-4 text-[9px] text-rose-300 font-bold uppercase">Tekan Enter Untuk Jawab</p>
+        </div>
+    </div>
+
+    <div id="phaseGame" class="phase">
+        <div class="absolute top-10 left-0 w-full text-center z-[60]">
+            <h2 class="text-xl font-bold text-rose-600 drop-shadow-sm">TANGKAP 20 HATI! ❤️</h2>
+            <div class="mt-2 inline-block bg-white/80 px-4 py-1 rounded-full shadow-sm">
+                <p class="text-rose-500 font-bold text-sm" id="game-counter">Hati Terkumpul: 0/20</p>
+            </div>
+        </div>
+        <div id="game-area" class="relative w-full h-full overflow-hidden"></div>
+    </div>
+
+    <div id="phase4" class="phase">
+        <div class="gallery-container" id="gallery">
+            <div class="photo-card" style="transform: rotate(-5deg) translateX(-15px)"><img src="poto1.jpeg"><span>Our First</span></div>
+            <div class="photo-card" style="transform: rotate(5deg) translateX(15px)"><img src="poto 2.jpeg"><span>Beautiful Smile</span></div>
+            <div class="photo-card" style="transform: rotate(-3deg) translateY(20px)"><img src="poto 3.jpeg"><span>Happy Times</span></div>
+            <div class="photo-card" style="transform: rotate(8deg) translateY(-10px)"><img src="poto 4.jpeg"><span>Always You</span></div>
+        </div>
+        
+        <div id="final-panel" class="glass-panel p-6 mt-6 max-w-sm">
+            <h1 class="text-xl font-bold text-rose-600 mb-2">You Did It! 🎉</h1>
+            <p id="final-desc" class="text-sm text-gray-600 mb-4">Semua teka-teki sudah terjawab. Kamu emang yang paling manis!</p>
+            
+            <div class="flex flex-col gap-3">
+                <button onclick="handleChoice(true)" class="bg-rose-500 text-white py-2 rounded-full font-bold shadow-md hover:scale-105 transition">Click ini kalo mau liat web nembak kamu dulu ❤️</button>
+                <button id="btn-later" onclick="handleChoice(false)" class="bg-gray-100 text-gray-500 py-2 rounded-full text-xs font-bold hover:bg-gray-200 transition">Nanti Aja</button>
+            </div>
+        </div>
+
+        <button id="persistent-link" onclick="handleChoice(true)" class="hidden mt-6 text-rose-500 font-bold underline text-sm animate-pulse">Buka Halaman Surat Sekarang ❤️</button>
+    </div>
+</div>
+
+<audio id="bgMusic" loop>
+    <source src="LANY - you! (Lyrics) - Finding Sounds.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+    // --- 1. 3D BACKGROUND ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    const objects = [];
+    function createCuteBear(x, y, z) {
+        const group = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ color: 0xffd1dc, roughness: 0.5 });
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), mat);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 32, 32), mat);
+        head.position.y = 0.6;
+        group.add(body, head);
+        group.position.set(x, y, z);
+        scene.add(group);
+        return group;
+    }
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); scene.add(ambientLight);
+    for(let i=0; i<25; i++) {
+        const obj = createCuteBear((Math.random()-0.5)*25, (Math.random()-0.5)*25, (Math.random()-0.5)*15);
+        objects.push({ obj, rot: Math.random()*0.02 });
+    }
+    camera.position.z = 10;
+
+    function animate3D() {
+        requestAnimationFrame(animate3D);
+        objects.forEach(o => { o.obj.rotation.y += o.rot; o.obj.position.y += Math.sin(Date.now() * 0.001) * 0.002; });
+        renderer.render(scene, camera);
+    }
+    animate3D();
+
+    // --- 2. TRANSITION LOGIC ---
+    function transition(from, to, callback) {
+        gsap.to(`#phase${from}`, { opacity: 0, duration: 0.5, onComplete: () => {
+            $(`#phase${from}`).removeClass('active');
+            $(`#phase${to}`).addClass('active');
+            gsap.to(`#phase${to}`, {opacity: 1, duration: 0.5, onComplete: callback});
+        }});
+    }
+
+    // --- 3. INTRO STORY ---
+    const introTexts = [
+        "Hai sayangku yang maniss... ❤️",
+        "Makasih ya udah klik suratnya.",
+        "Aku mau bilang happy valentine sayangg❤️",
+        "Aku mau ngajak kamu main sebentar nih ahaha 😋",
+        "Udah siap buat ingat-ingat momen kita sama kata apa aja selama kita lagi call ?"
+    ];
+
+    function startIntro() {
+        let i = 0;
+        function showNext() {
+            if(i < introTexts.length) {
+                $('#intro-text').text(introTexts[i]);
+                gsap.fromTo('#intro-text', {opacity: 0, y: 20}, {opacity: 1, y: 0, duration: 0.8});
+                setTimeout(() => {
+                    gsap.to('#intro-text', {opacity: 0, y: -20, duration: 0.8, onComplete: () => {
+                        i++; showNext();
+                    }});
+                }, 2200);
+            } else { transition('Intro', '3'); }
+        }
+        showNext();
+    }
+
+    // --- 4. START ---
+    $('#envelope-trigger').click(function() {
+        $('#envelope').addClass('open');
+        gsap.to(this, { scale: 2, opacity: 0, duration: 0.8, delay: 0.5 });
+        $('#transition-box').show();
+        gsap.to('#transition-box', { scale: 500, duration: 1, delay: 0.6, ease: "expo.in", onComplete: () => {
+            $('#phase1').removeClass('active'); $('#phase2').addClass('active');
+            gsap.to('#transition-box', { opacity: 0, duration: 0.5, onComplete: () => $('#transition-box').hide() });
+            gsap.to('#phase2', { opacity: 1, duration: 0.5 });
+            document.getElementById('bgMusic').play();
+        }});
+    });
+
+    $('#mic-btn').click(function() {
+        window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(!window.SpeechRecognition) { transition(2, 'Intro', startIntro); return; }
+        const rec = new SpeechRecognition();
+        rec.lang = 'id-ID';
+        rec.onstart = () => $('#voice-log').text("Mendengarkan...");
+        rec.onresult = (e) => {
+            const t = e.results[0][0].transcript.toLowerCase();
+            if(t.includes("iya") || t.includes("sayang")) transition(2, 'Intro', startIntro);
+        };
+        rec.start();
+    });
+
+    // --- 5. QUIZ ---
+    const questions = [
+        {q: "Aku suka apa pas kamu pap ke aku di fotonya?", a: ["like", "suka", "fotonya"]},
+        {q: "Tanggal berapa kita resmi jadian?", a: ["15", "oktober"]},
+        {q: "Apa nama panggilan khusus aku buat kamu?", a: ["sayang", "manis"]},
+        {q: "Aku selalu minta apa kalo lagi mesra mesraan?", a: ["peluk", "cium"]},
+        {q: "Terakhir, aku selalu bilang apa kalo habis peluk ?", a: ["manis", "sayang"]}
+    ];
+    let qIdx = 0;
+    $('#q-text').text(questions[0].q);
+
+    $('#ans-input').on('keypress', function(e) {
+        if(e.which == 13) {
+            const val = $(this).val().toLowerCase();
+            if(questions[qIdx].a.some(k => val.includes(k))) {
+                qIdx++;
+                $('#progress-bar').css('width', `${(qIdx/5)*100}%`);
+                $('#progress-text').text(`Progress: ${qIdx}/5`);
+                if(qIdx < 5) {
+                    gsap.to('#q-text', {opacity: 0, duration: 0.2, onComplete: () => {
+                        $('#q-text').text(questions[qIdx].q);
+                        gsap.to('#q-text', {opacity: 1, duration: 0.2});
+                    }});
+                    $(this).val('');
+                } else { transition(3, 'Game', initGame); }
+            } else { gsap.from(this, {x: 10, repeat: 3, yoyo: true, duration: 0.05}); }
+        }
+    });
+
+    // --- 6. MINI GAME (FIXED: INFINITE SPAWN) ---
+    let heartsPopped = 0;
+    let gameActive = false;
+    let spawnTimer;
+
+    function initGame() {
+        gameActive = true;
+        heartsPopped = 0;
+        $('#game-counter').text(`Hati Terkumpul: 0/20`);
+        startSpawning();
+    }
+
+    function startSpawning() {
+        if (!gameActive) return;
+        spawnHeart();
+        // Munculkan hati baru setiap 600ms - 900ms secara acak
+        spawnTimer = setTimeout(startSpawning, 600 + Math.random() * 300);
+    }
+
+    function spawnHeart() {
+        if (!gameActive) return;
+        const heart = $('<div class="game-heart">❤️</div>');
+        const x = Math.random() * (window.innerWidth - 60);
+        const y = window.innerHeight + 50;
+        heart.css({ left: x, top: y });
+        $('#game-area').append(heart);
+
+        gsap.to(heart, {
+            y: -150,
+            x: x + (Math.random() - 0.5) * 150,
+            duration: 3 + Math.random() * 2,
+            ease: "none",
+            onComplete: () => heart.remove()
+        });
+
+        heart.on('mousedown touchstart', function(e) {
+            e.preventDefault();
+            heartsPopped++;
+            $('#game-counter').text(`Hati Terkumpul: ${heartsPopped}/20`);
+            
+            // Efek pecah
+            gsap.to(heart, { scale: 2, opacity: 0, duration: 0.2, onComplete: () => heart.remove() });
+
+            if(heartsPopped >= 20 && gameActive) {
+                gameActive = false;
+                clearTimeout(spawnTimer);
+                setTimeout(() => {
+                    $('.game-heart').fadeOut();
+                    transition('Game', 4);
+                }, 800);
+            }
+        });
+    }
+
+    // --- 7. FINAL ---
+    function handleChoice(wantsRedirect) {
+        if(wantsRedirect) {
+            gsap.to('body', {opacity: 0, duration: 1.5, onComplete: () => {
+                window.location.href = "https://alifhenry.github.io/letterrrr/";
+            }});
+        } else {
+            $('#final-desc').text("Oke sayang, nikmatin fotonya dulu yaa...");
+            $('#btn-later').fadeOut();
+            $('#persistent-link').removeClass('hidden').addClass('block');
+        }
+    }
+
+    $('.photo-card').click(function() { $(this).prependTo('#gallery'); gsap.from(this, {scale: 1.2, duration: 0.3}); });
+</script>
+</body>
+</html>
